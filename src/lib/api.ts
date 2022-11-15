@@ -1,23 +1,20 @@
-import { RestClient } from "typed-rest-client";
-// import type { User, NewUser, UserResponse, LoginUser } from "./generated";
+import axios, { AxiosError, type AxiosResponse } from "axios";
 
-const baseUrl = 'https://api.realworld.io/api';
-const rest = new RestClient('rest-realworld', baseUrl);
+const baseURL = 'https://api.realworld.io/api';
+const client = axios.create({
+  baseURL,
+  timeout: 15000,
+});
 
-const auth = (token: string | undefined) => token ? { additionalHeaders: { Authorization: token } } : undefined;
-
-// export const api = {
-//   users: {
-//     create: async (user: NewUser) => await rest.create<UserResponse>('users', { user }),
-//     login: async (user: LoginUser) => await rest.create<UserResponse>('users/login', { user }),
-//     current: async (token: string) => await rest.get<UserResponse>('users', auth(token)),
-//     update: async (user: User, token: string) => await rest.replace('users', user, auth(token)),
-//   }
-// };
+const authHeader = (token: string | undefined) => token ? { Authorization: `Token ${token} `} : {};
 
 export const api = {
-  get: async <P>(path: string, token?: string) => rest.get<P>(path, auth(token)),
-  del: async <P>(path: string, token?: string) => rest.del<P>(path, auth(token)),
-  post: async <P, R>(path: string, data: P, token?: string) => rest.create<R>(path, data, auth(token)),
-  put: async <P, R>(path: string, data: P, token?: string) => rest.replace<R>(path, data, auth(token)),
+  get: async<T>(path: string, token?: string) => client.get<T>(path, { headers: authHeader(token) }),
+  del: async<T>(path: string, token?: string) => client.delete<T>(path, { headers: authHeader(token) }),
+  post: async<T, D>(path: string, data?: D, token?: string) =>
+    client.post<T, AxiosResponse<T, D>, D>(path, data, { headers: authHeader(token) }),
+  put: async<T, D>(path: string, data: D, token?: string) =>
+    client.put<T, AxiosResponse<T, D>, D>(path, data, { headers: authHeader(token) }),
+  // handle errors return from api
+  error: <T>(error: unknown): error is AxiosError<T> => axios.isAxiosError<T>(error),
 };

@@ -1,5 +1,5 @@
 import { api } from '$lib/api';
-import type { LoginUserRequest, UserResponse } from '$lib/generated';
+import type { GenericErrorModel, LoginUserRequest, UserResponse } from '$lib/generated';
 import { invalid, redirect } from '@sveltejs/kit';
 import type { Actions } from "./$types";
 
@@ -18,12 +18,12 @@ export const actions: Actions = {
     }
 
     try {
-      const res = await api.post<LoginUserRequest, UserResponse>(
+      const { data } = await api.post<UserResponse, LoginUserRequest>(
         'users/login',
         { user: { email, password } }
       );
-      if (res.result) {
-        cookies.set('jwt', JSON.stringify(res.result.user), {
+      if (data.user) {
+        cookies.set('jwt', JSON.stringify(data.user), {
           encode: (value) => Buffer.from(value).toString('base64'),
           secure: true,
         });
@@ -38,10 +38,12 @@ export const actions: Actions = {
         // };
       }
     } catch (error) {
-      if (error instanceof Error) {
-        const message = JSON.parse(error.message);
-        const errors = message['errors'];
-        return invalid(400, { errors, email, password });
+      if (api.error<GenericErrorModel>(error)) {
+        return invalid(400, {
+          errors: error.response?.data.errors,
+          email,
+          password
+        });
       }
     }
   }

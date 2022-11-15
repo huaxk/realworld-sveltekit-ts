@@ -1,6 +1,6 @@
 import type { Actions } from "./$types";
 import { invalid, redirect } from '@sveltejs/kit';
-import type { NewUserRequest, UserResponse } from '$lib/generated';
+import type { GenericErrorModel, NewUserRequest, UserResponse } from '$lib/generated';
 import { api } from "$lib/api";
 
 export const actions: Actions = {
@@ -22,22 +22,25 @@ export const actions: Actions = {
     }
 
     try {
-      const res = await api.post<NewUserRequest, UserResponse>(
+      const { data } = await api.post<UserResponse, NewUserRequest>(
         'users',
         { user: { username, email, password } }
       );
 
-      if (res.result) {
-        cookies.set('jwt', JSON.stringify(res.result.user), {
+      if (data.user) {
+        cookies.set('jwt', JSON.stringify(data.user), {
           encode: (value) => Buffer.from(value).toString('base64')
         });
         throw redirect(302, '/');
       }
-    } catch (err) {
-      if (err instanceof Error) {
-        const message = JSON.parse(err.message);
-        const errors = message['errors'];
-        return invalid(400, { errors, username, email, password });
+    } catch (error) {
+      if (api.error<GenericErrorModel>(error)) {
+        return invalid(400, {
+          errors: error.response?.data?.errors,
+          username,
+          email,
+          password
+        });
       }
     }
   }

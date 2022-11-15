@@ -32,6 +32,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"typed-rest-client": "^1.8.9"
+		"axios": "^1.1.3"
 	}
 }

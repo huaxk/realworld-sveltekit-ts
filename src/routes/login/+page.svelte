@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ActionData } from './$types';
+	import ListErrors from '$lib/ListErrors.svelte';
 
 	export let form: ActionData;
 </script>
@@ -17,7 +18,7 @@
 					<a href="/register">Need an account?</a>
 				</p>
 
-				<!-- <ListErrors {errors} /> -->
+				<ListErrors errors={form?.errors} />
 
 				<form method="post">
 					<fieldset class="form-group">
